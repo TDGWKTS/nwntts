@@ -703,6 +703,8 @@ function containerEntryCount() {
     return 1 + document.querySelectorAll('#extraContainerRows .field-row').length;
 }
 function addContainerEntry() {
+    // Page 2's container grid has 31 rows (rows 46-76): that is the cap.
+    if (containerEntryCount() >= 31) { alert('Page 2 container table is full: it has 31 rows (entries).'); return containerEntryCount(); }
     const n = containerEntryCount() + 1;
     const row = document.createElement('div');
     row.className = 'field-row sub-row';
