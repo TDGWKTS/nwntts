@@ -5,53 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>NWNT RTS Daily Inspection Form</title>
     <style>
+        :root { --ctl-h: 44px; --ctl-font: 16px; --teal: #00695c; --teal-dark: #004d40; --line: #cbdcd6; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #e9f0ee; font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; padding: 16px 12px; }
+        body { background: #e9f0ee; font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; padding: 16px 12px; }
         .form-container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 24px; box-shadow: 0 20px 35px rgba(0, 0, 0, 0.08); overflow: hidden; }
         .doc-header { background: #004d40; padding: 18px 20px; color: white; }
-        .doc-header h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: 1px; }
-        .doc-header .sub { font-size: 0.75rem; opacity: 0.85; margin-top: 6px; line-height: 1.4; }
-        .meta-bar { background: #f9fcfb; padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid #d4e2de; align-items: center; }
-        .meta-item { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; background: white; padding: 5px 12px; border-radius: 30px; }
-        .meta-item label { font-weight: 700; color: #00695c; font-size: 0.8rem; }
+        .doc-header h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: 1px; line-height: 1.3; }
+        .doc-header .sub { font-size: 0.8rem; opacity: 0.85; margin-top: 6px; line-height: 1.5; }
+        .meta-bar { background: #f9fcfb; padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #d4e2de; align-items: stretch; }
+        .meta-item { display: flex; align-items: center; gap: 8px; flex: 1 1 210px; background: white; padding: 6px 12px; border-radius: 16px; }
+        .meta-item label { font-weight: 700; color: #00695c; font-size: 0.8rem; white-space: nowrap; }
+        .meta-item input, .meta-item select { flex: 1; min-width: 0; }
+        /* Long-label fields (Rainstorm/Typhoon, Inspection Starting Time):
+           label on its own row, field box full-width on the next row */
+        .meta-item.stack-field, .period-selector.stack-field { flex-direction: column; align-items: stretch; gap: 6px; }
+        .stack-field label { white-space: normal; }
+        .stack-field input, .stack-field select { width: 100%; flex: none; }
         .required-star { color: #c62828; }
-        input, select, textarea { padding: 8px 12px; border-radius: 40px; border: 1px solid #cbdcd6; background: white; font-family: 'Courier New', monospace; font-weight: 500; font-size: 0.8rem; width: 100%; }
-        textarea { border-radius: 20px; }
+        /* --- ONE size for every field --- */
+        input, select, textarea { width: 100%; min-height: var(--ctl-h); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: white; font: inherit; font-size: var(--ctl-font); font-weight: 500; color: #1a3e36; }
+        input:focus, select:focus, textarea:focus { outline: 2px solid #00897b; outline-offset: 1px; border-color: #00897b; }
+        textarea { min-height: 68px; resize: vertical; line-height: 1.45; }
+        input[type="checkbox"] { width: 22px; height: 22px; min-height: 0; flex: 0 0 22px; padding: 0; border-radius: 6px; accent-color: var(--teal); cursor: pointer; }
+        input[type="date"] { min-height: var(--ctl-h); }
         .section { margin-top: 2px; }
-        .section-title { background: #e0f2f1; padding: 10px 20px; font-weight: 800; font-size: 1rem; color: #004d40; border-left: 6px solid #00897b; margin-top: 8px; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+        .section-title { background: #e0f2f1; padding: 12px 20px; font-weight: 800; font-size: 1rem; color: #004d40; border-left: 6px solid #00897b; margin-top: 8px; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; min-height: 48px; }
         .section-title:hover { background: #c8e6e5; }
         .section-title .toggle-icon { font-size: 1.2rem; }
         .section-content { transition: all 0.3s ease; overflow: hidden; }
         .section-content.collapsed { display: none; }
-        .field-row { padding: 10px 16px; border-bottom: 1px solid #edf3f0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
-        .field-row .label { font-weight: 700; font-size: 0.8rem; color: #1a3e36; min-width: 260px; width: 38%; word-break: break-word; }
-        .field-row .input-area { flex: 1; min-width: 180px; }
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
-        .checkbox-group label { display: inline-flex; align-items: center; gap: 5px; font-weight: normal; font-size: 0.8rem; }
-        .inline-cluster { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-        .inline-cluster select, .inline-cluster input { width: auto; flex: 1; min-width: 100px; }
-        .btn-primary { background: #00695c; border: none; padding: 12px; font-weight: bold; font-size: 0.9rem; border-radius: 60px; color: white; cursor: pointer; transition: 0.2s; width: calc(100% - 40px); margin: 20px; }
+        .field-row { padding: 10px 16px; border-bottom: 1px solid #edf3f0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 14px; }
+        .field-row .label { font-weight: 700; font-size: 0.9rem; color: #1a3e36; flex: 1 1 300px; min-width: 0; word-break: break-word; line-height: 1.4; }
+        .field-row .input-area { flex: 1 1 320px; min-width: 0; }
+        .field-row .input-area > label { display: inline-flex; align-items: center; gap: 8px; min-height: var(--ctl-h); font-size: 0.9rem; cursor: pointer; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .checkbox-group label { display: inline-flex; align-items: center; gap: 8px; font-weight: normal; font-size: 0.9rem; min-height: var(--ctl-h); padding: 6px 14px 6px 10px; background: #f2f7f5; border: 1px solid #e0ebe7; border-radius: 999px; cursor: pointer; }
+        /* --- Inline clusters: every field the SAME size, wrapping evenly --- */
+        .inline-cluster { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .inline-cluster > input, .inline-cluster > select, .inline-cluster > textarea,
+        .inline-cluster .mini, .inline-cluster .mid { flex: 1 1 150px; width: auto; min-width: 0; }
+        .inline-cluster > label { display: inline-flex; align-items: center; gap: 8px; flex: 1 1 150px; min-width: 0; min-height: var(--ctl-h); font-size: 0.9rem; white-space: normal; cursor: pointer; }
+        .inline-cluster > label input[type="text"] { flex: 1; min-width: 0; }
+        .btn-primary { background: #00695c; border: none; min-height: 52px; padding: 12px; font-weight: bold; font-size: 1rem; border-radius: 60px; color: white; cursor: pointer; transition: 0.2s; width: calc(100% - 40px); margin: 20px; }
         .btn-primary:hover { background: #00897b; }
-        .legend { background: #fff7e5; padding: 10px 16px; font-size: 0.65rem; color: #a86407; border-top: 1px solid #ffe0b5; }
-        .legend p { margin: 3px 0; }
-        .auto-save-badge { background: #e8f5e9; border-radius: 40px; padding: 4px 10px; font-size: 0.7rem; font-weight: 600; color: #2e7d32; display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
-        .period-bar { background: #e8f5e9; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; border-bottom: 1px solid #c8e6e5; }
-        .period-selector { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 40px; }
-        .period-selector label { font-weight: bold; color: #00695c; }
-        .group-label { padding: 9px 16px 2px; font-weight: 800; color: #00695c; font-size: 0.83rem; }
+        .legend { background: #fff7e5; padding: 10px 16px; font-size: 0.72rem; color: #a86407; border-top: 1px solid #ffe0b5; }
+        .legend p { margin: 3px 0; line-height: 1.5; }
+        .auto-save-badge { background: #e8f5e9; border-radius: 40px; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; color: #2e7d32; display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+        .period-bar { background: #e8f5e9; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; border-bottom: 1px solid #c8e6e5; }
+        .period-selector { display: flex; align-items: center; gap: 10px; flex: 1 1 230px; background: white; padding: 6px 15px; border-radius: 16px; }
+        .period-selector label { font-weight: bold; color: #00695c; font-size: 0.85rem; white-space: nowrap; }
+        .period-selector input, .period-selector select { flex: 1; min-width: 0; width: 100%; }
+        .group-label { padding: 10px 16px 2px; font-weight: 800; color: #00695c; font-size: 0.9rem; line-height: 1.4; }
         .sub-row .label { padding-left: 18px; font-weight: 600; }
         .sub-row .label::before { content: "\21B3 "; color: #00897b; }
-        .inline-cluster label { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; white-space: nowrap; }
-        .inline-cluster .mini { flex: 0 0 76px; min-width: 76px; width: 76px; }
-        .inline-cluster .mid { flex: 0 0 135px; min-width: 135px; width: 135px; }
-        .hint { font-size: 0.68rem; color: #607d8b; font-weight: 500; }
-        @media (max-width: 700px) {
-            .field-row { flex-direction: column; align-items: flex-start; }
-            .field-row .label { width: 100%; }
-            .meta-bar { flex-direction: column; align-items: stretch; }
-            .period-bar { flex-direction: column; align-items: stretch; }
-            .inline-cluster { flex-direction: column; align-items: stretch; }
-            .inline-cluster select, .inline-cluster input { width: 100%; }
+        .hint { font-size: 0.75rem; color: #607d8b; font-weight: 500; }
+        /* --- Tablet --- */
+        @media (max-width: 900px) {
+            .field-row { flex-direction: column; align-items: stretch; }
+            .field-row .label, .field-row .input-area { flex: 1 1 auto; width: 100%; }
+            .sub-row .label { padding-left: 10px; }
+        }
+        /* --- Phone --- */
+        @media (max-width: 600px) {
+            body { padding: 0; }
+            .form-container { border-radius: 0; box-shadow: none; }
+            .doc-header { padding: 14px; }
+            .doc-header h1 { font-size: 1.12rem; letter-spacing: 0.3px; }
+            .meta-bar, .period-bar { flex-direction: column; padding: 10px 12px; }
+            .meta-item, .period-selector { flex: 1 1 auto; width: 100%; }
+            .auto-save-badge { margin-left: 0; align-self: flex-start; }
+            .section-title { padding: 12px 14px; font-size: 0.95rem; }
+            .field-row { padding: 10px 12px; }
+            .inline-cluster > input, .inline-cluster > select, .inline-cluster > textarea,
+            .inline-cluster .mini, .inline-cluster .mid, .inline-cluster > label { flex: 1 1 100%; }
+            .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; }
+            .checkbox-group label { justify-content: flex-start; }
+            .btn-primary { width: calc(100% - 24px); margin: 14px 12px; position: sticky; bottom: 10px; box-shadow: 0 6px 18px rgba(0,77,64,0.35); }
         }
     </style>
 </head>
@@ -66,16 +95,16 @@
         <div class="meta-item"><label>📅 DATE <span class="required-star">*</span></label><input type="date" id="inspectDate"></div>
         <div class="meta-item"><label>🌦️ WEATHER AM</label><select id="weatherAM"><option value="">Select</option><option value="Sunny">Sunny</option><option value="Cloudy">Cloudy</option><option value="Fine">Fine</option><option value="Rainy">Rainy</option></select></div>
         <div class="meta-item"><label>🌙 WEATHER PM</label><select id="weatherPM"><option value="">Select</option><option value="Sunny">Sunny</option><option value="Cloudy">Cloudy</option><option value="Fine">Fine</option><option value="Rainy">Rainy</option></select></div>
-        <div class="meta-item"><label>⛈️ RAINSTORM / TYPHOON AM</label><input type="text" id="rfAm" placeholder="(Signal / Rainfall)"></div>
-        <div class="meta-item"><label>⛈️ RAINSTORM / TYPHOON PM</label><input type="text" id="rfPm" placeholder="(Signal / Rainfall)"></div>
+        <div class="meta-item stack-field"><label>⛈️ RAINSTORM / TYPHOON AM</label><input type="text" id="rfAm" placeholder="(Signal / Rainfall)"></div>
+        <div class="meta-item stack-field"><label>⛈️ RAINSTORM / TYPHOON PM</label><input type="text" id="rfPm" placeholder="(Signal / Rainfall)"></div>
         <div class="auto-save-badge" id="autoSaveBadge">💾 Auto-saved</div>
     </div>
 
     <!-- 時段選擇區域 -->
     <div class="period-bar">
         <div class="period-selector"><label>⏱️ TIME PERIOD:</label><select id="periodSelect"><option value="P1">07:30 - 09:30</option><option value="P2">11:30 - 13:30</option><option value="P3">16:30 - 18:30</option><option value="P4">18:30 - 20:30</option></select></div>
-        <div class="period-selector"><label>🕐 INSPECTION STARTING TIME:</label><input type="text" id="inspectStartTime" placeholder="e.g. 1548" style="width:120px"></div>
-        <div class="period-selector"><label>👤 INSPECTED BY:</label><input type="text" id="inspectedByGlobal" placeholder="I(TD)" style="width:150px"></div>
+        <div class="period-selector stack-field"><label>🕐 INSPECTION STARTING TIME:</label><input type="text" id="inspectStartTime" placeholder="e.g. 1548"></div>
+        <div class="period-selector"><label>👤 INSPECTED BY:</label><input type="text" id="inspectedByGlobal" placeholder="I(TD)"></div>
         <div class="period-selector"><span id="currentPeriodDisplay" style="font-weight:bold; color:#00695c;">Current: 07:30-09:30</span></div>
     </div>
 
@@ -294,7 +323,7 @@
         </div>
 
         <button type="button" id="exportBtn" class="btn-primary">📎 EXPORT TO EXCEL</button>
-        <div class="legend"><p>✅ NWNT Transfer Station Daily Inspection (DOIF-NWNTRTS-001 v9, Revised) | Contract EP/SP/383/26 | Auto-save | Smart ID/Time | Export = one worksheet "Data" (row 1 = header labels from this form, row 2 = record, blank columns removed) | Page 1 (Operation) + Page 2 (Environmental Monitoring, Manning Level &amp; Remarks)</p></div>
+        <div class="legend"><p>✅ NWNT Transfer Station Daily Inspection (DOIF-NWNTRTS-001 v9, Revised) | Contract EP/SP/383/26 | Auto-save | Smart ID/Time | Export = one standalone worksheet "Data" (row 1 = header for every item on this form, row 2 = record; every field included once, columns in the same order every time) | Page 1 (Operation) + Page 2 (Environmental Monitoring, Manning Level &amp; Remarks)</p></div>
     </form>
 </div>
 
@@ -482,222 +511,154 @@ function collectFormDataForExport() {
     return flat;
 }
 
-// ========== Export layout matching "NWNTTS Inspection Tool.xlsm" > DataSheet (A:FY) ==========
-// One exported row = one inspection; paste into DataSheet row 3, 4, 5 or 6.
-const DS_MAP = [
-    ['A','Date','inspection_date'], ['B','Inspected By','inspected_by'], ['C','Time','inspect_start_time'],
-    ['D','Weather AM','weather_am'], ['E','Weather PM','weather_pm'],
-    ['G','1.2 Traffic smoothness / Drop Bar','traffic_control'],
-    ['H','1.3 Weighbridge display / Traffic light (In)','weight_display'],
-    ['I','1.4 Weighbridge display / Traffic light (Out)','wb_trans_wcv'],
-    ['J','1.5 Computer / Printer','wb_trans_trailer'],
-    ['K','1.6 Operator / Lighting','wb_operator_count'],
-    ['L','1.7 CCTV system','cctv_system'],
-    ['M','2.1 Channel indicator / Traffic light','th_signal_ramp'],
-    ['N','2.2 RCV access cleanliness / Roller Shutter','th_roller'],
-    ['O','2.3 Traffic smoothness / Drop Bar','th_signal_allot'],
-    ['Q','3.1 Water spraying / brushing','ds_vws_wash'],
-    ['S','4.1 Traffic smoothness','th_signal_ramp'],
-    ['T','4.2 Tipping hall cleanliness / Lighting','ds_th_lights'],
-    ['V','4.4 Spray / Dust','ds_th_spray'],
-    ['W','4.5 Ventilation fan / Odour','ds_vr_fans'],
-    ['Y','4.7 Infrared heat detection / Overhead detection','ds_th_overheight'],
-    ['Z','4.8 Dust and odour suppressing system','ds_vr_scrubbers'],
-    ['AA','5.1 Operator','ds_cr_ops'],
-    ['AD','6.1 Unit 1 / Unit 2','ds_vr_scrubbers'],
-    ['AF','6.3 Odour / Dust','ds_vr_h2s'],
-    ['AG','6.4 Circulation system / Chemicals','ds_vws_recirc'],
-    ['AI','7.2 Odour / Dust','odor_level'],
-    ['AK','7.4 Tractor / Trailer','ds_tractor_counts'],
-    ['AM','8.1.2 Main Collection Tank - Run-down screen','rundown_screen'],
-    ['AQ','8.4.2 Sequencing batch reactor (SBR) on/off','sbr1_status'],
-    ['AS','8.5.1 Filter Press Room - Odour / Dust / Ventilation fan','ds_filter_press'],
-    ['AT','9.1 Container access cleanliness / Roller shutter','door_closed'],
-    ['BE','12.1 Road sweeper cleaning streets','street_clean_time'],
-    ['BF','12.2 Road sweeper cleaning site area','clean_access_time'],
-    ['BG','12.3 Odour Monitoring System','odor_level'],
-    ['DM','13.58 Notes','general_remarks'],
-    ['DN','13.59 Checked By','checked_by'],
-    ['DQ','PII-1.1 Checked by','checked_by'],
-    ['DS','PII-1.3 Daily waste transaction record checked','wb_trans_wcv'],
-    ['DU','PII-1.5 Remark','general_remarks'],
-    ['DY','PII-3.1 Inspected by','inspected_by'],
-    ['DZ','PII-3.2 Time','th_random_time'],
-    ['EB','PII-3.4 Vehicle No.','th_random_vehicle'],
-    ['EC','PII-3.5 Permitted Waste','th_random_permitted'],
-    ['ED','PII-4.1 Inspected by','inspected_by'],
-    ['EG','PII-4.4 Waste handling properly','ds_waste_handling'],
-    ['EN','PII-6.1 Inspected by','inspected_by'],
-    ['EP','PII-6.3 Vehicle properly cleaned','vehicle_cleaned'],
-    ['ER','PII-7.1 Inspected by','inspected_by'],
-    ['EV','PII-8.1 Inspected by','inspected_by'],
-    ['EZ','PII-9.1 Conducted by','air_co_by'],
-    ['FB','PII-9.3 Time','air_co_time'],
-    ['FD','PII-9.5 Remark','air_co_level'],
-    ['FE','PII-10.1 Conducted by','noise_nsr_day_by'],
-    ['FH','PII-10.4 Time','noise_nsr_day_time'],
-    ['FJ','PII-10.6 Remark','noise_nsr_day_level'],
-    ['FK','PII-11.1 Conducted by','effluent_by'],
-    ['FN','PII-11.4 Time','effluent_sample_time'],
-    ['FP','PII-11.6 Remark','effluent_results'],
-    ['FQ','PII-12.1 Conducted by','sludge_by'],
-    ['FS','PII-12.3 Time','sludge_time'],
-    ['FU','PII-13.1 Conducted by','stormwater_by'],
-    ['FW','PII-13.3 Time','stormwater_sample_time'],
-    ['FX','PII-13.4 Remark','stormwater_other'],
-    ['FY','Timestamp','timestamp']
-];
+// ========== Standalone export (user decision 2026-11-19: standalone is final) ==========
+// ONE worksheet, "Data": row 1 = a header for EVERY field on the form, in form
+// order; row 2 = this inspection's record. Headers are built from the form
+// itself (section | group | item | sub-item), so a header always matches the
+// item that was checked - including checkbox groups such as
+// "1) Weighbridge in Operation" No.4 / No.5 / No.3 / No.6, which the old
+// 64-entry export dropped entirely. Every column is kept in the same
+// order on every export (an unticked / blank field stays as a blank column),
+// so exported files from different officers can be stacked row under row.
+function cleanText(s) { return (s || '').replace(/\s+/g, ' ').trim(); }
+function cleanSection(s) { return cleanText(s).replace(/[\u25bc\u25b6]/g, '').replace(/^[^\p{L}\p{N}]+/u, '').trim(); }
 
-function colToIndex(letters) {
-    let n = 0;
-    for (const ch of letters) n = n * 26 + (ch.charCodeAt(0) - 64);
-    return n - 1;
-}
-
-function labeled(pairs, d) {
-    return pairs.map(([label, key]) => {
-        const v = d[key] === 'Y' ? 'OK' : (d[key] || '');
-        return v ? `${label}: ${v}` : '';
-    }).filter(Boolean).join(' / ');
-}
-
-function buildDataSheetRow(flat) {
-    const d = { ...flat };
-    d.ds_vws_wash = labeled([['WCV','vws_wcv_wash'],['Trailer','vws_trailer_wash']], d);
-    d.ds_th_lights = labeled([['1','th_light1'],['2','th_light2'],['3','th_light3'],['4','th_light4']], d);
-    d.ds_th_spray = labeled([['1','th_spray1'],['2','th_spray2'],['3','th_spray3'],['4','th_spray4']], d);
-    d.ds_th_overheight = labeled([['1','th_overheight1'],['2','th_overheight2'],['3','th_overheight3'],['4','th_overheight4']], d);
-    d.ds_vr_fans = labeled([['TH1','vr_fan1'],['TH2','vr_fan2'],['WWTP','vr_wwtp_fan']], d);
-    d.ds_vr_scrubbers = labeled([['1','vr_scrubber1'],['2','vr_scrubber2']], d);
-    d.ds_vr_h2s = labeled([['1','vr_h2s1'],['2','vr_h2s2'],['WWTP','vr_wwtp_h2s']], d);
-    d.ds_vws_recirc = labeled([['WCV','vws_wcv_recirc'],['Trailer','vws_trailer_recirc']], d);
-    d.ds_cr_ops = labeled([['CR1','th_cr1_op'],['CR2','th_cr2_op']], d);
-    d.ds_tractor_counts = labeled([['Yard','yard_tractor_count'],['Highway','highway_tractor_count'],['Telescopic','telescopic_count']], d);
-    d.ds_filter_press = labeled([['Press','filter_press_status'],['Discharged','sludge_discharged'],['Fan','vr_wwtp_fan']], d);
-    d.ds_waste_handling = labeled([['Doors','trapped_waste'],['Container body','sticked_waste']], d);
-
-    const row = new Array(181).fill('');
-    DS_MAP.forEach(([col, header, key]) => {
-        const v = d[key];
-        if (v !== undefined && v !== null && v !== '') row[colToIndex(col)] = v;
-    });
-    const mapping = DS_MAP.map(([col, header, key], i) => [col, header, key, row[colToIndex(col)], i + 1]);
-    return { row, mapping };
-}
-
-// Export header labels come from the actual HTML form controls, not from the
-// legacy DataSheet header strings in DS_MAP. The value below only selects
-// which control's visible label to use for a derived/combined export column.
-const HEADER_FIELD = {
-    inspection_date: '#inspectDate',
-    inspected_by: '#inspectedByGlobal',
-    inspect_start_time: '#inspectStartTime',
-    weather_am: '#weatherAM',
-    weather_pm: '#weatherPM',
-    checked_by: '#checkedBy',
-    ds_vws_wash: 'vws_wcv_wash',
-    ds_th_lights: 'th_light1',
-    ds_th_spray: 'th_spray1',
-    ds_vr_fans: 'vr_fan1',
-    ds_th_overheight: 'th_overheight1',
-    ds_vr_scrubbers: 'vr_scrubber1',
-    ds_vr_h2s: 'vr_h2s1',
-    ds_vws_recirc: 'vws_wcv_recirc',
-    ds_cr_ops: 'th_cr1_op',
-    ds_tractor_counts: 'yard_tractor_count',
-    ds_filter_press: 'filter_press_status',
-    ds_waste_handling: 'trapped_waste'
+// Header abbreviation (user request 2026-11-19: headers were too long).
+// Sections become short codes; [Sp...] specification citations and
+// instruction parentheticals are dropped; recurring long words are shortened.
+// Item numbers (1), a), No.1, Schedule, Random) are always kept, so every
+// header still ties back to the paper form. Meta headers (Date, Period,
+// Inspection Starting Time, ...) are NOT abbreviated.
+const SECTION_CODES = {
+    'WEIGHBRIDGE AREA': 'WB',
+    'TIPPING HALL AREA': 'TH',
+    'VENTILATION SYSTEM': 'VS',
+    'VEHICLE WASH SYSTEMS': 'VWS',
+    'CLEANLINESS OF NWNTRTS AND SURROUNDING': 'CL',
+    'OPEN AREA FOR HIGHWAY TRACTOR / YARD TRACTOR / TRAILER / LOADER': 'OA',
+    'AIR (Page 2)': 'AIR',
+    'NOISE (Page 2)': 'NOISE',
+    'SLUDGE (Page 2)': 'SLUDGE',
+    'PEST CONTROL (Page 2)': 'PEST',
+    'STORMWATER / WASTEWATER (Page 2)': 'SW',
+    'MANNING LEVEL (Page 2)': 'MAN',
+    'REMARKS & SIGN OFF (Page 2)': 'RMK'
 };
-
-function cleanHtmlLabel(text) {
-    return (text || '')
-        .replace(/[\uFE00-\uFE0F\u200B-\u200D\uFEFF]/g, '')
-        .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/gu, '')
-        .replace(/\*/g, '')
-        .replace(/\s+/g, ' ')
-        .replace(/[:\s]+$/, '')
-        .trim();
+function abbreviatePart(s) {
+    if (!s) return s;
+    s = s.replace(/\[Sp\.[^\]]*\]/g, '');                    // specification citations
+    s = s.replace(/\((?:Please|please)[^)]*\)/g, '');        // (Please circle ...), (Please specify)
+    s = s.replace(/\((?:'|‘|’)?Tick[^)]*\)/g, '');           // ('Tick' the blanks as appropriate)
+    s = s.replace(/\(inside tipping hall\)/gi, '');
+    s = s.replace(/\(at site boundary\)/gi, '');
+    s = s.replace(/\(for Tipping Pit[^)]*\)/gi, '');
+    s = s.replace(/\(1m from nearest site boundary\)/gi, 'Site boundary (1m)');
+    s = s.replace(/\(1m from nearest NSR\)/gi, 'NSR (1m)');
+    s = s.replace(/\(day time\)/gi, '(day)');
+    s = s.replace(/\(night time\)/gi, '(night)');
+    s = s.replace(/\u2610/g, '');                            // tick-box glyph in label text
+    s = s.replace(/\bControl Room No\.?\s*(\d+)/gi, 'Ctrl Rm $1');
+    s = s.replace(/\bControl Room\b/gi, 'Ctrl Rm');
+    s = s.replace(/\bDust Control\b/gi, 'Dust Ctrl');
+    s = s.replace(/\bWaste Water\b/gi, 'WW');
+    const words = [
+        [/\bRecirculation\b/gi, 'Recirc'], [/\bConcentration\b/gi, 'Conc'],
+        [/\bMeasurement\b/gi, 'Meas'], [/\bMonitoring\b/gi, 'Mon'],
+        [/\bInspection\b/gi, 'Insp'], [/\bStormwater\b/gi, 'SW'],
+        [/\bWastewater\b/gi, 'WW'], [/\bOperations\b/gi, 'Ops'],
+        [/\bOperation\b/gi, 'Op'], [/\bContainers\b/gi, 'Cont'],
+        [/\bContainer\b/gi, 'Cont'], [/\bVehicles\b/gi, 'Veh'],
+        [/\bVehicle\b/gi, 'Veh'], [/\bSystems\b/gi, 'Sys'],
+        [/\bSystem\b/gi, 'Sys'], [/\bBuilding\b/gi, 'Bldg'],
+        [/\bAverage\b/gi, 'Avg'], [/\bAssistant\b/gi, 'Asst']
+    ];
+    words.forEach(([re, v]) => { s = s.replace(re, v); });
+    s = s.replace(/\s+/g, ' ').replace(/\s+([,;:])/g, '$1').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
+    s = s.replace(/[\s,;:\u2014-]+$/, '').trim();
+    return s;
 }
 
-function htmlLabelForElement(el) {
-    if (!el) return '';
-    // A checkbox inside .checkbox-group has its own sub-label to the left of it;
-    // combine it with the parent item label so each checkbox gets a unique header.
-    if (el.type === 'checkbox' && el.parentElement &&
-        el.parentElement.tagName === 'LABEL' && el.closest('.checkbox-group')) {
-        const sub = cleanHtmlLabel(el.parentElement.textContent);
+function buildStandaloneRecord(flat) {
+    const headers = [], values = [], seen = {};
+    function add(header, value) {
+        let h = cleanText(header) || 'Field';
+        if (seen[h]) { seen[h]++; h = h + ' (' + seen[h] + ')'; } else { seen[h] = 1; }
+        headers.push(h);
+        values.push(value === undefined || value === null ? '' : value);
+    }
+
+    // Header / meta fields, in the order they appear on the form
+    add('Date', flat.inspection_date);
+    add('Period', flat.period_name ? (flat.period + ' (' + flat.period_name + ')') : flat.period);
+    add('Inspection Starting Time', flat.inspect_start_time);
+    add('Inspected By', flat.inspected_by);
+    add('Weather AM', flat.weather_am);
+    add('Weather PM', flat.weather_pm);
+    add('Rainstorm / Typhoon AM', flat.rf_am);
+    add('Rainstorm / Typhoon PM', flat.rf_pm);
+
+    // Remember the last group label seen before each control, per section
+    const groupByControl = new Map();
+    document.querySelectorAll('#inspectionForm .section').forEach(sec => {
+        let g = '';
+        sec.querySelectorAll('.group-label, input, select, textarea').forEach(node => {
+            if (node.classList.contains('group-label')) { g = cleanText(node.textContent); }
+            else { groupByControl.set(node, g); }
+        });
+    });
+
+    // Every named form field, in form (DOM) order
+    const form = document.getElementById('inspectionForm');
+    Array.from(form.elements).forEach(el => {
+        if (!el.name || el.type === 'hidden') return;
+        const sec = el.closest('.section');
+        const section = sec ? cleanSection(sec.querySelector('.section-title')?.textContent) : '';
         const row = el.closest('.field-row');
-        const mainEl = row ? row.querySelector('.label') : null;
-        const main = mainEl ? cleanHtmlLabel(mainEl.textContent) : '';
-        if (main && sub && !main.toLowerCase().includes(sub.toLowerCase())) return main + ' - ' + sub;
-        return main || sub;
-    }
-    const row = el.closest('.field-row, .meta-item, .period-selector');
-    if (!row) return cleanHtmlLabel(el.getAttribute('aria-label') || '');
-    const label = row.querySelector('.label, label');
-    let text = cleanHtmlLabel(label ? label.textContent : '');
-    if (el.tagName === 'SELECT' && text) {
-        const ph = el.querySelector('option[value=""]');
-        const phText = ph ? cleanHtmlLabel(ph.textContent) : '';
-        if (phText && phText.toLowerCase() !== 'select' &&
-            !text.toLowerCase().includes(phText.toLowerCase())) {
-            text += ' | ' + phText;
+        const rowLabel = row ? cleanText(row.querySelector('.label')?.textContent) : '';
+        const group = groupByControl.get(el) || '';
+        const rowControls = row ? row.querySelectorAll('input, select, textarea').length : 1;
+
+        let sub = '';
+        const wrapLabel = el.closest('label');
+        if (el.type === 'checkbox') {
+            sub = wrapLabel ? cleanText(wrapLabel.textContent) : '';
+        } else if (wrapLabel && wrapLabel.closest('.inline-cluster')) {
+            sub = cleanText(wrapLabel.textContent);
+        } else if (rowControls > 1 && el.placeholder) {
+            sub = cleanText(el.placeholder);
+        } else if (rowControls > 1 && el.tagName === 'SELECT') {
+            const first = el.options && el.options.length ? cleanText(el.options[0].textContent) : '';
+            if (first && first !== 'Select') sub = first;
         }
-    }
-    return text;
-}
 
-function htmlLabelFor(key) {
-    const src = HEADER_FIELD[key];
-    let el = null;
-    if (src && src.charAt(0) === '#') el = document.querySelector(src);
-    else if (src) el = document.querySelector(`[name="${src}"]`);
-    if (!el) el = document.querySelector(`[name="${key}"]`);
-    return el ? htmlLabelForElement(el) : '';
-}
+        // A group heading only belongs to its own sub-items: if the row is a
+        // top-level numbered item with a different number, the group is a
+        // previous item's heading and must not leak into this header.
+        const rowNum = (rowLabel.match(/^(\d+)\)/) || [])[1];
+        const groupNum = (group.match(/^(\d+)\)/) || [])[1];
+        const useGroup = group && (!rowNum || rowNum === groupNum);
 
-function buildHtmlHeaders() {
-    const headers = new Array(181).fill('');
-    DS_MAP.forEach(([col, fallback, key]) => {
-        let label = htmlLabelFor(key);
-        if (!label && key === 'timestamp') label = 'EXPORTED AT';
-        if (!label) label = fallback;
-        headers[colToIndex(col)] = label;
+        const parts = [];
+        const sectionCode = SECTION_CODES[section] || abbreviatePart(section);
+        [sectionCode,
+         useGroup ? abbreviatePart(group) : '',
+         abbreviatePart(rowLabel),
+         abbreviatePart(sub)].forEach(p => {
+            p = cleanText(p);
+            if (p && !parts.includes(p)) parts.push(p);
+        });
+        add(parts.join(' | '), flat[el.name]);
     });
-    return headers;
+
+    add('Inspection Form Checked By', flat.checked_by);
+    add('Timestamp', flat.timestamp);
+    return { headers, values };
 }
 
-function controlValue(el, excelData) {
-    const id = el.id, name = el.name;
-    if (id === 'inspectDate') return excelData.inspection_date;
-    if (id === 'weatherAM') return excelData.weather_am;
-    if (id === 'weatherPM') return excelData.weather_pm;
-    if (id === 'rfAm') return excelData.rf_am;
-    if (id === 'rfPm') return excelData.rf_pm;
-    if (id === 'periodSelect') return excelData.period_name || excelData.period;
-    if (id === 'inspectStartTime') return excelData.inspect_start_time;
-    if (id === 'inspectedByGlobal') return excelData.inspected_by;
-    if (id === 'checkedBy') return excelData.checked_by;
-    if (el.type === 'checkbox') return excelData[name] === 'Y' ? 'OK' : '';
-    if (name && excelData[name] !== undefined) return excelData[name];
-    return el.value;
-}
-
-// One column per HTML control: every inspection item and every checkbox gets
-// its own header + value cell. These are appended after the legacy 181 columns
-// so the inspection tool's fixed-column VBA mapping keeps working.
-function buildAllControlColumns(excelData) {
-    const out = [];
-    const used = new Set();
-    document.querySelectorAll('input, select, textarea').forEach(el => {
-        if (el.type === 'hidden' || el.type === 'button' ||
-            el.type === 'submit' || el.type === 'reset') return;
-        const key = el.name || el.id;
-        if (!key || used.has(key)) return;
-        used.add(key);
-        out.push([htmlLabelForElement(el) || key, controlValue(el, excelData)]);
-    });
-    return out;
+function excelColName(n) { // 0-based -> A, B, ... AA ...
+    let s = '';
+    for (n = n + 1; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
+    return s;
 }
 
 async function exportToExcel() {
@@ -719,29 +680,21 @@ async function exportToExcel() {
         // Save to main DB (browser storage only)
         await saveToMainDB(excelData);
         
-        // Generate Excel: ONE sheet "Data". Row 1 = header, row 2 = value.
-        // Legacy 181-column values are kept first (blank-header columns removed),
-        // then every HTML control is appended with its own header + value cell.
-        const { row } = buildDataSheetRow(excelData);
-        const legacyHeaders = buildHtmlHeaders();
-        const columns = [];
-        for (let i = 0; i < 181; i++) {
-            if (legacyHeaders[i]) columns.push([legacyHeaders[i], row[i]]);
-        }
-        buildAllControlColumns(excelData).forEach(([header, value]) => {
-            if (header) columns.push([header, value]);
-        });
-        const headers = columns.map(p => p[0]);
-        const dataRow = columns.map(p => p[1]);
-        const ws = XLSX.utils.aoa_to_sheet([headers, dataRow]);
+        // Generate Excel: ONE standalone worksheet "Data"
+        // Row 1 = headers for every item on the form; row 2 = this record.
+        const { headers, values } = buildStandaloneRecord(excelData);
+        const ws = XLSX.utils.aoa_to_sheet([headers, values]);
+        ws['!cols'] = headers.map(h => ({ wch: Math.min(48, Math.max(14, h.length + 2)) }));
+        ws['!autofilter'] = { ref: 'A1:' + excelColName(headers.length - 1) + '1' };
+        ws['!freeze'] = { xSplit: 0, ySplit: 1 };
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Data');
-        
+
         const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
         const filename = `NWNTTS_${date}_${currentPeriod}_${inspected}_${timestamp}.xlsx`;
         XLSX.writeFile(wb, filename);
         
-        showExportStatus(`✅ Excel exported! Sheet "Data": row 1 = headers, row 2 = record (no blank columns).`);
+        showExportStatus(`✅ Excel exported! Sheet "Data": row 1 = headers for every item, row 2 = this record.`);
         
         // Optional: Clear form after successful export
         // Uncomment if you want to clear the form after export
