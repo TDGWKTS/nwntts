@@ -520,6 +520,20 @@ function collectFormDataForExport() {
 // order on every export (an unticked / blank field stays as a blank column),
 // so exported files from different officers can be stacked row under row.
 function cleanText(s) { return (s || '').replace(/\s+/g, ' ').trim(); }
+
+// Container No. shorthand (Page 2, container overnight storage):
+// officers type number groups only, e.g. "12 001 002", and the field
+// shows "NW12 MV001 & MV002" - first group takes NW, the rest take MV,
+// joined with " & ". Anything containing letters is left as typed.
+function expandContainerNo(v) {
+    v = (v || '').trim();
+    if (!v || /[A-Za-z]/.test(v)) return v;
+    const toks = v.split(/[\s,]+/).filter(x => x);
+    if (!toks.length || !toks.every(x => /^\d+$/.test(x))) return v;
+    let out = 'NW' + toks[0];
+    if (toks.length > 1) out += ' ' + toks.slice(1).map(x => 'MV' + x).join(' & ');
+    return out;
+}
 function cleanSection(s) { return cleanText(s).replace(/[\u25bc\u25b6]/g, '').replace(/^[^\p{L}\p{N}]+/u, '').trim(); }
 
 // Header abbreviation (user request 2026-11-19: headers were too long).
@@ -606,6 +620,8 @@ function buildStandaloneRecord(flat) {
         });
     });
 
+    if (flat.overnight_container_no) flat.overnight_container_no = expandContainerNo(flat.overnight_container_no);
+
     // Every named form field, in form (DOM) order
     const form = document.getElementById('inspectionForm');
     Array.from(form.elements).forEach(el => {
@@ -653,6 +669,12 @@ function buildStandaloneRecord(flat) {
     add('Timestamp', flat.timestamp);
     return { headers, values };
 }
+
+// Expand the Container No. shorthand as soon as the officer leaves the field
+document.addEventListener('DOMContentLoaded', function() {
+    const inp = document.querySelector('input[name="overnight_container_no"]');
+    if (inp) inp.addEventListener('blur', function() { inp.value = expandContainerNo(inp.value); });
+});
 
 function excelColName(n) { // 0-based -> A, B, ... AA ...
     let s = '';
