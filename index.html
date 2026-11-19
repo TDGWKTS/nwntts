@@ -311,8 +311,9 @@
                 <div class="field-row"><span class="label">1) Hired Tractors:</span><div class="input-area"><input type="text" name="hired_tractors" placeholder="Details"></div></div>
                 <div class="group-label">Container overnight storage</div>
                 <div class="field-row sub-row"><span class="label">Container No. / Start Time / Departure Time</span><div class="input-area"><div class="inline-cluster"><input type="text" name="overnight_container_no" placeholder="Container No." class="mid"><input type="text" name="overnight_start_time" placeholder="Start Time" class="mid"><input type="text" name="overnight_departure_time" placeholder="Departure Time" class="mid"></div></div></div>
-                <div class="field-row sub-row"><span class="label">Additional entries</span><div class="input-area"><textarea rows="2" name="remarks_overnight" placeholder="Container No. / Start Time / Departure Time"></textarea></div></div>
-                <div class="field-row"><span class="label">2) Effluent discharge started at (hrs / meter reading)</span><div class="input-area"><div class="inline-cluster"><input type="text" name="effluent_start_time" placeholder="Time" class="mini"><input type="text" name="effluent_start_meter" placeholder="Meter Reading" class="mid"></div></div></div>
+                <div id="extraContainerRows"></div>
+                <div class="field-row sub-row"><span class="label">More containers</span><div class="input-area"><button type="button" id="addContainerEntryBtn" style="width:auto;min-height:44px;padding:10px 18px;border-radius:12px;border:1px solid #00695c;background:#e0f2f1;color:#004d40;font:inherit;font-weight:700;cursor:pointer">+ Add container entry</button></div></div>
+                                <div class="field-row"><span class="label">2) Effluent discharge started at (hrs / meter reading)</span><div class="input-area"><div class="inline-cluster"><input type="text" name="effluent_start_time" placeholder="Time" class="mini"><input type="text" name="effluent_start_meter" placeholder="Meter Reading" class="mid"></div></div></div>
                 <div class="field-row"><span class="label">Effluent discharge finished at (hrs / meter reading)</span><div class="input-area"><div class="inline-cluster"><input type="text" name="effluent_finish_time" placeholder="Time" class="mini"><input type="text" name="effluent_finish_meter" placeholder="Meter Reading" class="mid"></div></div></div>
                 <div class="field-row"><span class="label">No effluent discharge</span><div class="input-area"><label>Tick if no discharge <input type="checkbox" name="no_effluent_discharge" value="Y"></label></div></div>
                 <div class="field-row"><span class="label">Number of container overnight storage :</span><div class="input-area"><input type="text" name="overnight_container_count" placeholder="Number"></div></div>
@@ -413,6 +414,12 @@ function saveCurrentPeriodData() {
 
 function loadPeriodData(period) {
     const data = periodData[period] || {};
+    // Recreate any added container-entry rows this period's data needs
+    if (typeof ensureContainerRows === 'function') {
+        let mx = 1;
+        Object.keys(data).forEach(k => { const m = k.match(/^overnight_container_no_(\d+)$/); if (m) mx = Math.max(mx, parseInt(m[1], 10)); });
+        if (mx > 1) ensureContainerRows(mx);
+    }
     const form = document.getElementById('inspectionForm');
     const elements = form.elements;
     for(let i = 0; i < elements.length; i++) {
@@ -626,6 +633,7 @@ function buildStandaloneRecord(flat) {
     const form = document.getElementById('inspectionForm');
     Array.from(form.elements).forEach(el => {
         if (!el.name || el.type === 'hidden') return;
+        if (/^overnight_(container_no|start_time|departure_time)_\d+$/.test(el.name)) return; // added container entries: appended after all fixed columns below
         const sec = el.closest('.section');
         const section = sec ? cleanSection(sec.querySelector('.section-title')?.textContent) : '';
         const row = el.closest('.field-row');
@@ -667,6 +675,16 @@ function buildStandaloneRecord(flat) {
 
     add('Inspection Form Checked By', flat.checked_by);
     add('Timestamp', flat.timestamp);
+
+    // Added container entries (Entry 2, 3, ...), appended after every
+    // fixed column so the fixed column order never moves.
+    for (let k = 2; ; k++) {
+        if (!form.querySelector('input[name="overnight_container_no_' + k + '"]')) break;
+        const stem = 'RMK | Cont overnight storage | Cont No. / Start Time / Departure Time (Entry ' + k + ') | ';
+        add(stem + 'Cont No.', expandContainerNo(flat['overnight_container_no_' + k] || ''));
+        add(stem + 'Start Time', flat['overnight_start_time_' + k]);
+        add(stem + 'Departure Time', flat['overnight_departure_time_' + k]);
+    }
     return { headers, values };
 }
 
@@ -674,6 +692,47 @@ function buildStandaloneRecord(flat) {
 document.addEventListener('DOMContentLoaded', function() {
     const inp = document.querySelector('input[name="overnight_container_no"]');
     if (inp) inp.addEventListener('blur', function() { inp.value = expandContainerNo(inp.value); });
+});
+
+
+// ---- Extra container entries (Add button) --------------------------
+// Each tap appends an identical Container No. / Start Time /
+// Departure Time row, named overnight_container_no_N /
+// overnight_start_time_N / overnight_departure_time_N (N = 2, 3, ...).
+function containerEntryCount() {
+    return 1 + document.querySelectorAll('#extraContainerRows .field-row').length;
+}
+function addContainerEntry() {
+    const n = containerEntryCount() + 1;
+    const row = document.createElement('div');
+    row.className = 'field-row sub-row';
+    row.innerHTML = '<span class="label">Container No. / Start Time / Departure Time (Entry ' + n + ')</span>' +
+        '<div class="input-area"><div class="inline-cluster">' +
+        '<input type="text" name="overnight_container_no_' + n + '" placeholder="Container No." class="mid">' +
+        '<input type="text" name="overnight_start_time_' + n + '" placeholder="Start Time" class="mid">' +
+        '<input type="text" name="overnight_departure_time_' + n + '" placeholder="Departure Time" class="mid">' +
+        '</div></div>';
+    document.getElementById('extraContainerRows').appendChild(row);
+    row.querySelectorAll('input').forEach(el => {
+        el.addEventListener('blur', function() {
+            if (el.name.indexOf('overnight_container_no') === 0) el.value = expandContainerNo(el.value);
+            else if (typeof formatTime === 'function' && el.value) el.value = formatTime(el.value);
+        });
+        if (typeof autoHandler === 'function') { el.addEventListener('input', autoHandler); el.addEventListener('change', autoHandler); }
+    });
+    return n;
+}
+function ensureContainerRows(n) {
+    while (containerEntryCount() < n) addContainerEntry();
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('addContainerEntryBtn');
+    if (btn) btn.addEventListener('click', addContainerEntry);
+    // Shorthand expansion for the main entry and every added entry
+    const form = document.getElementById('inspectionForm');
+    if (form) form.addEventListener('focusout', function(e) {
+        if (e.target && /^overnight_container_no(_\d+)?$/.test(e.target.name || '')) e.target.value = expandContainerNo(e.target.value);
+    });
 });
 
 function excelColName(n) { // 0-based -> A, B, ... AA ...
